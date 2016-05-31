@@ -1,10 +1,10 @@
 # speedtest
 
-PURPOSE
+## Purpose
 
 Measure the real downlink and uplink bandwidth of your DSL or Calbe Internet connection every hour to create a bandwidth log.
 
-INSTALL
+## Installation
 
 * Clone the sript in ${HOME}/speedtest
 * Eventually create /var/www/html/speedlink if you want to download the log from your private web server
