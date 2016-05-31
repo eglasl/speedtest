@@ -5,19 +5,20 @@
 #
 # (c) 2016, Eelco M. Glasl <eelco.glasl@gmail.com>
 # speedtest.tele2.net offers standardized download files with sizes/names like
-# 1000GB, 100GB, 50GB, 10GB, 1GB, 500MB, 200MB, 50MB, 10MB, 1MB, 512KB, 100KB,
-# 1MB etc. ending at ".zip".
+# 10GB, 1GB, 100MB, 10MB, 1MB, 100KB, 1KB
+# etc. ending at ".zip". See http://speedtest.tele2.net/
 #
 # INSTALLATION:
-# 1. Change DNF if necessary (different file size?)
-# 2. Create a cronjob with content as shown below
-# 3. Check if LOG gets created
-# 4. LOG can be opened with Excel, create bandwidth graps during 1 month
+# 1. Change WWW if necessary or set to "./"
+# 2. Change DNF if necessary for different file size
+# 3. Create a cronjob with content as shown below
+# 4. Check if LOG gets created
+# 5. LOG can be opened with spreadsheet to create bandwidth graphs during 1 month
 #
 # CRONJOB:
 # 0 * * * * ${HOME}/speedtest/run.sh down && ${HOME}/speedtest/run.sh up
 
-LANG="en_US"                              # For proper handling of decimal point
+LANG="en_US.UTF-8"                        # For proper handling of decimal point
 DIR="${HOME}/speedtest/"                  # My directory
 WWW="/var/www/html/speedtest/"            # Public Web directory
 BIN="/usr/bin/curl"                       # cURL binary
@@ -50,7 +51,7 @@ case ${1} in
       -s ${URL}${UPF} >>${LOG}
     ;;
   *)
-    echo "usage: ${0} [ down | up ]"
+    echo "usage: ${0} [down|up]"
     ;;
 esac
 
