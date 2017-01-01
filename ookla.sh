@@ -17,51 +17,101 @@
 # 6. Create symbolic links from ./ookla.sh to ./incoming and ./outgoing
 #
 # CRONJOB:
-# 0 * * * * ${HOME}/speedtest/incoming && ${HOME}/speedtest/outgoing
+# 0 * * * * /var/speedtest/incoming && /var/speedtest/outgoing
+# or:
+# 0 * * * * /var/speedtest/combined
+
+#####################
+##  Configuration  ##
+#####################
+
+LANG="en_US.UTF-8"                        # Accurate handling of decimal point
+DIR="/var/speedtest/"                     # My directory
+WWW="/var/log/speedtest/"                 # Save the log files here
+BIN="/usr/bin/curl"                       # cURL binary
+URL="ftp://speedtest.tele2.net/"          # Download URL of OOKLA
+API="https://api.ipify.org?format=text"   # Get my public IP in text format
+DNF="10MB.zip"                            # Download file to test bandwidth
+UPF="upload/$(/bin/date +%N).zip"         # Upload file name, unique
+LOG="${WWW}$(/bin/date +%Y-%m)"           # Create a new log every month
+# Format of curl date (for curl -w)
+FMT="%{remote_ip},%{size_download},%{speed_download},%{size_upload},%{speed_upload},%{time_namelookup},%{time_connect},%{time_total}"
+# Get my local public IP address via API but check before use
+PIP="$(${BIN} -f -s ${API} | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')"
+# Get my local IP address or hostname
+LIP="$(host $(hostname -s) | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')"
+
+#######################
+##  Basic functions  ##
+#######################
 
 # Get stripped basename of called script
 SELF="${0}"; BASE="${SELF##*/}"; CORE="${BASE%.*}"
 
-LANG="en_US.UTF-8"                        # Froper handling of decimal point
-DIR="/root/speedtest/"                    # My directory
-WWW="/var/log/speedtest/"                 # Public Web directory
-BIN="/usr/bin/curl"                       # cURL binary
-URL="ftp://speedtest.tele2.net/"          # Download URL
-DNF="10MB.zip"                            # Download file to test bandwidth
-UPF="upload/$(/bin/date +%N).zip"         # Upload file name, unique
-LOG="${WWW}$(/bin/date -u +%Y-%m)"        # Create a new log every month
+function testdata {
+  # If test data file for upload does not exist, download it first
+  ${BIN} -f -s ${URL}${DNF} -o ${DIR}${DNF} 2>&1 >/dev/null
+}
 
-# Time stamp and format of log file entries, see "man curl: -w"
-TST="$(/bin/date -u +%d-%H%M)"
-FMT="%{remote_ip},%{size_download},%{speed_download},%{size_upload},%{speed_upload},%{time_namelookup},%{time_connect},%{time_total}"
+function logfiles {
+  # Create log file for the first time
+  echo -e "time_stamp,data_flow,local_ip,public_ip,${FMT}" | sed -e 's/[%{}]//g' >${OUT}
+}
 
-# If upload file does not exist, download it first
-test -f ${DIR}${DNF} || ${BIN} -f -s ${URL}${DNF} \
-  -o ${DIR}${DNF} 2>&1 >/dev/null
+function incoming {
+  # echo "Script \"${CORE}\" on public IP ${PIP} testing download speed!"
+  # Set time stamp
+  TST="$(/bin/date +%Y-%m-%dT%H:%M:%S%z)"
+  # Perform the download
+  echo "${TST},incoming,${LIP},${PIP},${FMT}\n" | ${BIN} -w "@-" -s ${URL}${DNF} \
+    -o /dev/null >>${OUT}
+}
+
+function outgoing {
+  # echo "Script \"${CORE}\" on public IP ${PIP} testing upload speed!"
+  # Set time stamp
+  TST="$(/bin/date +%Y-%m-%dT%H:%M:%S%z)"
+  # Perform the upload
+  echo "${TST},outgoing,${LIP},${PIP},${FMT}\n" | ${BIN} -w "@-" -T ${DIR}${DNF} \
+    -s ${URL}${UPF} >>${OUT}
+}
+
+###################
+##  Main script  ##
+###################
 
 case ${CORE} in
+
   "incoming" )
-    # echo "${CORE} testing download speed!"
     OUT="${LOG}.${CORE}.csv"
-    test -f ${OUT} || echo -e "time_stamp,${FMT}" \
-      | sed -e 's/[%{}]//g' >${OUT}
-    echo "${TST},${FMT}\n" | ${BIN} -w "@-" -s ${URL}${DNF} \
-      -o /dev/null >>${OUT}
+    test -f "${OUT}"       || logfiles
+    test -f "${DIR}${DNF}" || testdata
+    incoming
     exit 0
     ;;
+
   "outgoing" )
-    # echo "${CORE} testing upload speed!"
     OUT="${LOG}.${CORE}.csv"
-    test -f ${OUT} || echo -e "time_stamp,${FMT}" \
-      | sed -e 's/[%{}]//g' >${OUT}
-    echo "${TST},${FMT}\n" | ${BIN} -w "@-" -T ${DIR}${DNF} \
-      -s ${URL}${UPF} >>${OUT}
+    test -f "${OUT}"       || logfiles
+    test -f "${DIR}${DNF}" || testdata
+    outgoing
     exit 0
     ;;
-  *)
-    echo "usage: [ incoming | outgoing ]"
+
+  "combined" )
+    OUT="${LOG}.${CORE}.csv"
+    test -f "${OUT}"       || logfiles
+    test -f "${DIR}${DNF}" || testdata
+    incoming
+    outgoing
+    exit 0
+    ;;
+
+  * )
+    echo "Usage: [ combined | incoming | outgoing ]"
     exit 1
     ;;
+
 esac
 
 # eof
