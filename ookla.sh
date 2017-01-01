@@ -17,9 +17,15 @@
 # 6. Create symbolic links from ./ookla.sh to ./incoming and ./outgoing
 #
 # CRONJOB:
-# 0 * * * * /var/speedtest/incoming && /var/speedtest/outgoing
-# or:
 # 0 * * * * /var/speedtest/combined
+#
+# The logfile will have a name like "2017-01.combined.csv" with the following content
+# after the first call (example):
+#
+# time_stamp,data_flow,local_ip,public_ip,remote_ip,size_download,speed_download,size_upload,speed_upload,time_namelookup,time_connect,time_total
+# 2017-01-01T17:01:01+0100,incoming,192.168.100.1,32.17.101.61,90.130.70.73,10485760,5663383.000,0,0.000,0.004,0.034,1.852
+# 2017-01-01T17:01:03+0100,outgoing,192.168.100.1,32.17.101.61,90.130.70.73,0,0.000,10485760,705032.000,0.004,0.033,14.873
+
 
 #####################
 ##  Configuration  ##
