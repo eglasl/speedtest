@@ -6,7 +6,8 @@ Measure the real downlink and uplink bandwidth of your DSL or Calbe Internet con
 
 ## Installation
 
-* Clone the sript in ${HOME}/speedtest
-* Eventually create /var/www/html/speedlink if you want to download the log from your private web server
-* Create a cronjob: 0 * * * * test -x ${HOME}/speedtest/run.sh && ${HOME}/speedtest/run.sh down && ${HOME}/speedtest/run.sh up
+* Clone the sript in /var/speedtest
+* Eventually create /var/www/html/speedtest if you want to download the log from your private web server or create /var/log/speedtest or whatever
+* Create symlinks in /var/speedtest from "./ookla.sh" to "./incoming", "./outgoing" and "./combined"
+* Create a cronjob: "0 0,6,12,18,21 * * * test -x /var/speedtest/combined && /var/speedtest/combined"
 * Use LibreOffice Calc to create graphs from the log in CSV
