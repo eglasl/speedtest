@@ -10,7 +10,7 @@
 #
 # INSTALLATION:
 # 1. Change WWW if necessary or set to "./"
-# 2. Change DNF if necessary for different file size
+# 2. Change ULS and DLS if necessary for different file size
 # 3. Create a cronjob with content as shown below
 # 4. Check if LOG gets created
 # 5. LOG can be opened with spreadsheet to create graphs during 1 month
@@ -38,10 +38,11 @@ LANG="en_US.UTF-8"                        # Accurate handling of decimal point
 DIR="/var/speedtest/"                     # My directory
 WWW="/var/log/speedtest/"                 # Save the log files here
 BIN="/usr/bin/curl"                       # cURL binary
-URL="ftp://speedtest.tele2.net/"          # Download URL of OOKLA
-API="https://api.ipify.org?format=text"   # Get my public IP in text format
-DNF="10MB.zip"                            # Download file to test bandwidth
-UPF="upload/$(date +%N).zip"              # Upload file name, unique
+URL="ftp://speedtest.tele2.net/"          # Download URL of Speedtest.net
+API="https://api.ipify.org?format=text"   # API to get public IP in text format
+DLS="100MB.zip"                           # Download test source file
+ULS="10MB.zip"                            # Upload test soure file
+ULT="upload/$(date +%N).zip"              # Upload test target file
 LOG="${WWW}$(date +%Y-%m)"                # Create a new log every month
 CHK="sha256sum"                           # Tool to add checksum to rows
 
@@ -65,7 +66,7 @@ SELF="${0}"; BASE="${SELF##*/}"; CORE="${BASE%.*}"
 
 function testdata {
   # If test data file for upload does not exist, download it first
-  ${BIN} -f -s ${URL}${DNF} -o ${DIR}${DNF} 2>&1 >/dev/null
+  ${BIN} -f -s ${URL}${ULS} -o ${DIR}${ULS} 2>&1 >/dev/null
 }
 
 function logfiles {
@@ -80,7 +81,7 @@ function incoming {
   TST="$( date +%Y-%m-%dT%H:%M:%S%z )"
   # Perform the download
   ROW="$( echo "${TST},incoming,${LIP},${PIP},${FMT},\n" \
-    | ${BIN} -w "@-" -s ${URL}${DNF} -o /dev/null )"
+    | ${BIN} -w "@-" -s ${URL}${DLS} -o /dev/null )"
   # Generate checksum of row and append to output
   SUM="$( echo -n ${ROW} | ${CHK} | awk '{print $1}' )"
   echo "${ROW}${SUM}" >>${OUT}
@@ -92,7 +93,7 @@ function outgoing {
   TST="$( date +%Y-%m-%dT%H:%M:%S%z )"
   # Perform the upload
   ROW="$( echo "${TST},outgoing,${LIP},${PIP},${FMT},\n" \
-    | ${BIN} -w "@-" -T ${DIR}${DNF} -s ${URL}${UPF} )"
+    | ${BIN} -w "@-" -T ${DIR}${ULS} -s ${URL}${ULT} )"
   # Generate checksum of row and append to output
   SUM="$( echo -n ${ROW} | ${CHK} | awk '{print $1}' )"
   echo "${ROW}${SUM}" >>${OUT}
@@ -108,7 +109,7 @@ case ${CORE} in
   "incoming" )
     OUT="${LOG}.${CORE}.csv"
     test -f "${OUT}"       || logfiles
-    test -f "${DIR}${DNF}" || testdata
+    test -f "${DIR}${ULS}" || testdata
     incoming
     exit 0
     ;;
@@ -116,7 +117,7 @@ case ${CORE} in
   "outgoing" )
     OUT="${LOG}.${CORE}.csv"
     test -f "${OUT}"       || logfiles
-    test -f "${DIR}${DNF}" || testdata
+    test -f "${DIR}${ULS}" || testdata
     outgoing
     exit 0
     ;;
@@ -124,7 +125,7 @@ case ${CORE} in
   "combined" )
     OUT="${LOG}.${CORE}.csv"
     test -f "${OUT}"       || logfiles
-    test -f "${DIR}${DNF}" || testdata
+    test -f "${DIR}${ULS}" || testdata
     incoming
     outgoing
     exit 0
