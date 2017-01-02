@@ -19,14 +19,16 @@
 # CRONJOB:
 # 0 * * * * /var/speedtest/combined
 #
-# The logfile will have a name like "2017-01.combined.csv" with the following content
-# after the first call (example):
+# The logfile will have a name like "2017-01.combined.csv" with the following
+# rows after the first call.
 #
+# ROW EXAMPLE:
 # time_stamp,data_flow,local_ip,public_ip,remote_ip,size_download,speed_download,size_upload,speed_upload,time_namelookup,time_connect,time_total,sha256sum
 # 2017-01-02T13:07:55+0100,incoming,10.59.17.198,213.61.137.106,90.130.70.73,10485760,6966731.000,0,0.000,0.004,0.019,1.505,8f16fc487a358d369d45f2030e3629aca3480d798c5153e32ed44e9b67a12f48
 # 2017-01-02T13:07:57+0100,outgoing,10.59.17.198,213.61.137.106,90.130.70.73,0,0.000,10485760,6959582.000,0.004,0.017,1.507,55cee35735ffe0ac1f64aaafd45de03479022fa5d1fde68c8dac45973051e8b4
 #
-# Verify checksum: $ echo -n "${PASTED_ROW_WITHOUT_LAST_COMMA}" | sha256sum
+# VERIFY ROW:
+# $ echo -n "${PASTE_COMPLETE_ROW_MINUS_LAST_COLUMN}" | sha256sum
 
 #####################
 ##  Configuration  ##
@@ -77,11 +79,11 @@ function incoming {
   # Set time stamp
   TST="$( date +%Y-%m-%dT%H:%M:%S%z )"
   # Perform the download
-  ROW="$( echo "${TST},incoming,${LIP},${PIP},${FMT}\n" \
+  ROW="$( echo "${TST},incoming,${LIP},${PIP},${FMT},\n" \
     | ${BIN} -w "@-" -s ${URL}${DNF} -o /dev/null )"
   # Generate checksum of row and append to output
   SUM="$( echo -n ${ROW} | ${CHK} | awk '{print $1}' )"
-  echo "${ROW},${SUM}" >>${OUT}
+  echo "${ROW}${SUM}" >>${OUT}
 }
 
 function outgoing {
@@ -89,11 +91,11 @@ function outgoing {
   # Set time stamp
   TST="$( date +%Y-%m-%dT%H:%M:%S%z )"
   # Perform the upload
-  ROW="$( echo "${TST},outgoing,${LIP},${PIP},${FMT}\n" \
+  ROW="$( echo "${TST},outgoing,${LIP},${PIP},${FMT},\n" \
     | ${BIN} -w "@-" -T ${DIR}${DNF} -s ${URL}${UPF} )"
   # Generate checksum of row and append to output
   SUM="$( echo -n ${ROW} | ${CHK} | awk '{print $1}' )"
-  echo "${ROW},${SUM}" >>${OUT}
+  echo "${ROW}${SUM}" >>${OUT}
 }
 
 
