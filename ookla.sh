@@ -22,10 +22,11 @@
 # The logfile will have a name like "2017-01.combined.csv" with the following content
 # after the first call (example):
 #
-# time_stamp,data_flow,local_ip,public_ip,remote_ip,size_download,speed_download,size_upload,speed_upload,time_namelookup,time_connect,time_total
-# 2017-01-01T17:01:01+0100,incoming,192.168.100.1,32.17.101.61,90.130.70.73,10485760,5663383.000,0,0.000,0.004,0.034,1.852
-# 2017-01-01T17:01:03+0100,outgoing,192.168.100.1,32.17.101.61,90.130.70.73,0,0.000,10485760,705032.000,0.004,0.033,14.873
-
+# time_stamp,data_flow,local_ip,public_ip,remote_ip,size_download,speed_download,size_upload,speed_upload,time_namelookup,time_connect,time_total,sha256sum
+# 2017-01-02T13:07:55+0100,incoming,10.59.17.198,213.61.137.106,90.130.70.73,10485760,6966731.000,0,0.000,0.004,0.019,1.505,8f16fc487a358d369d45f2030e3629aca3480d798c5153e32ed44e9b67a12f48
+# 2017-01-02T13:07:57+0100,outgoing,10.59.17.198,213.61.137.106,90.130.70.73,0,0.000,10485760,6959582.000,0.004,0.017,1.507,55cee35735ffe0ac1f64aaafd45de03479022fa5d1fde68c8dac45973051e8b4
+#
+# Verify checksum: $ echo -n "${PASTED_ROW_WITHOUT_LAST_COMMA}" | sha256sum
 
 #####################
 ##  Configuration  ##
@@ -40,16 +41,17 @@ API="https://api.ipify.org?format=text"   # Get my public IP in text format
 DNF="10MB.zip"                            # Download file to test bandwidth
 UPF="upload/$(date +%N).zip"              # Upload file name, unique
 LOG="${WWW}$(date +%Y-%m)"                # Create a new log every month
+CHK="sha256sum"                           # Tool to add checksum to rows
 
 # Format of curl date (for curl -w)
 FMT="%{remote_ip},%{size_download},%{speed_download},%{size_upload},%{speed_upload},%{time_namelookup},%{time_connect},%{time_total}"
 
 # Get my public IP address via API but check output before use
-PIP="$(${BIN} -f -s ${API} | egrep -o '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')"
+PIP="$( ${BIN} -f -s ${API} | egrep -o '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' )"
 
 # Get my local IP address of external NIC
 # LIP="$(host $(hostname -s) | egrep -o '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')"
-LIP="$(ip route get 8.8.8.8 | awk '/8.8.8.8/ {print $NF}')"
+LIP="$( ip route get 8.8.8.8 | awk '/8.8.8.8/ {print $NF}' )"
 
 # Get my stripped basename
 SELF="${0}"; BASE="${SELF##*/}"; CORE="${BASE%.*}"
@@ -66,28 +68,32 @@ function testdata {
 
 function logfiles {
   # Create log file for the first time
-  echo -e "time_stamp,data_flow,local_ip,public_ip,${FMT}" \
+  echo -e "time_stamp,data_flow,local_ip,public_ip,${FMT},${CHK}" \
     | sed -e 's/[%{}]//g' >${OUT}
 }
 
 function incoming {
   # echo "Script \"${CORE}\" on public IP ${PIP} testing download speed!"
   # Set time stamp
-  TST="$(date +%Y-%m-%dT%H:%M:%S%z)"
+  TST="$( date +%Y-%m-%dT%H:%M:%S%z )"
   # Perform the download
-  echo "${TST},incoming,${LIP},${PIP},${FMT}\n" \
-    | ${BIN} -w "@-" -s ${URL}${DNF} \
-    -o /dev/null >>${OUT}
+  ROW="$( echo "${TST},incoming,${LIP},${PIP},${FMT}\n" \
+    | ${BIN} -w "@-" -s ${URL}${DNF} -o /dev/null )"
+  # Generate checksum of row and append to output
+  SUM="$( echo -n ${ROW} | ${CHK} | awk '{print $1}' )"
+  echo "${ROW},${SUM}" >>${OUT}
 }
 
 function outgoing {
   # echo "Script \"${CORE}\" on public IP ${PIP} testing upload speed!"
   # Set time stamp
-  TST="$(date +%Y-%m-%dT%H:%M:%S%z)"
+  TST="$( date +%Y-%m-%dT%H:%M:%S%z )"
   # Perform the upload
-  echo "${TST},outgoing,${LIP},${PIP},${FMT}\n" \
-    | ${BIN} -w "@-" -T ${DIR}${DNF} \
-    -s ${URL}${UPF} >>${OUT}
+  ROW="$( echo "${TST},outgoing,${LIP},${PIP},${FMT}\n" \
+    | ${BIN} -w "@-" -T ${DIR}${DNF} -s ${URL}${UPF} )"
+  # Generate checksum of row and append to output
+  SUM="$( echo -n ${ROW} | ${CHK} | awk '{print $1}' )"
+  echo "${ROW},${SUM}" >>${OUT}
 }
 
 
