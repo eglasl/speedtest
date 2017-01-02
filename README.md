@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Measure the real downlink and uplink bandwidth of your DSL or Calbe Internet connection every hour to create a bandwidth log.
+Measure the real downlink and uplink bandwidth of your DSL or Cable connection by cronjob to create a bandwidth log.
 
 ## Installation
 
