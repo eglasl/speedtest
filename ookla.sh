@@ -14,13 +14,16 @@
 # 3. Create a cronjob with content as shown below
 # 4. Check if LOG gets created
 # 5. LOG can be opened with spreadsheet to create graphs during 1 month
-# 6. Create symbolic links from ./ookla.sh to ./incoming and ./outgoing
+# 6. Create symbolic links from ./ookla.sh to ./incoming, ./outgoing,
+#    ./combined and ./checksum
 #
-# CRONJOB:
-# 0 * * * * /var/speedtest/combined
+# CRONTAB:
+# 00 00,06,12,18  * * * /var/speedtest/combined
+# 10 00          01 * * /var/speedtest/checksum
 #
 # The logfile will have a name like "2017-01.combined.csv" with the following
-# rows after the first call.
+# rows after the first call. The checksum file att every first of the month
+# will look like "2017-01.combined.sha256sum"
 #
 # ROW EXAMPLE:
 # time_stamp,data_flow,local_ip,public_ip,remote_ip,size_download,speed_download,size_upload,speed_upload,time_namelookup,time_connect,time_total,sha256sum
@@ -43,7 +46,7 @@ API="https://api.ipify.org?format=text"   # API to get public IP in text format
 DLS="100MB.zip"                           # Download test source file
 ULS="10MB.zip"                            # Upload test soure file
 ULT="upload/$(date +%N).zip"              # Upload test target file
-LOG="${WWW}$(date +%Y-%m)"                # Create a new log every month
+LOG="$(date +%Y-%m)"                      # Create a new log every month
 CHK="sha256sum"                           # Tool to add checksum to rows
 
 # Format of curl date (for curl -w)
@@ -99,6 +102,23 @@ function outgoing {
   echo "${ROW}${SUM}" >>${OUT}
 }
 
+function checksum {
+  # Upon creation of a new log file, generate checksums of closed log files
+  # Use with crontab: "10 00 01 * * /var/speedtest/checksum"
+  cd ${WWW}
+  for LF1 in *.csv; do
+    LF2="${LF1%.*}"
+    LF3="${LF2%.*}"
+    if [ -s ${LF2}.${CHK} ]; then
+      echo "${0}: ${LF1} old file skipped"
+    elif [ "${LF3}" == "${LOG}" ]; then
+      echo "${0}: ${LF1} new file skipped"
+    else
+      ${CHK} ${LF2}.csv >${LF2}.${CHK}
+      echo "${0}: ${LF1} generated ${LF2}.${CHK}"
+    fi
+  done
+}
 
 ###################
 ##  Main script  ##
@@ -107,7 +127,7 @@ function outgoing {
 case ${CORE} in
 
   "incoming" )
-    OUT="${LOG}.${CORE}.csv"
+    OUT="${WWW}${LOG}.${CORE}.csv"
     test -f "${OUT}"       || logfiles
     test -f "${DIR}${ULS}" || testdata
     incoming
@@ -115,7 +135,7 @@ case ${CORE} in
     ;;
 
   "outgoing" )
-    OUT="${LOG}.${CORE}.csv"
+    OUT="${WWW}${LOG}.${CORE}.csv"
     test -f "${OUT}"       || logfiles
     test -f "${DIR}${ULS}" || testdata
     outgoing
@@ -123,7 +143,7 @@ case ${CORE} in
     ;;
 
   "combined" )
-    OUT="${LOG}.${CORE}.csv"
+    OUT="${WWW}${LOG}.${CORE}.csv"
     test -f "${OUT}"       || logfiles
     test -f "${DIR}${ULS}" || testdata
     incoming
@@ -131,12 +151,18 @@ case ${CORE} in
     exit 0
     ;;
 
+  "checksum" )
+    checksum
+    exit 0
+    ;;
+
   * )
-    echo "Usage: [ combined | incoming | outgoing ]"
+    echo "Usage: [ combined | incoming | outgoing | checksum ]"
     echo "OOKLA Speedtest wrapper, (c) 2017 by eelco.glasl@gmail.com"
-    echo "  combined - write combined download and upload log"
-    echo "  incoming - write download log"
-    echo "  outgoing - write upload log"
+    echo "  combined - write a combined download and upload log"
+    echo "  incoming - write a download test log"
+    echo "  outgoing - write an upload test log"
+    echo "  checksum - create a checksum file of each closed log file."
     exit 1
     ;;
 
