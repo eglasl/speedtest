@@ -1,4 +1,4 @@
-# speedtest - Bandwidth and Link test wrapper around cURL
+# blurl - Bandwidth and Link test wrapper around cURL
 
 ## Purpose
 
