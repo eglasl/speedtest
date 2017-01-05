@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# speedtest/ookla.sh - Calculate downstream and upstream bandwidth to measure
-# DSL or Cable connection quality.
+# speedtest/blurl.sh - Bandwidth and Link tester wrapped around cURL:
+# Calculate downstream and upstream bandwidth
+# to measure DSL or Cable connection quality.
 #
 # (c) 2016, Eelco M. Glasl <eelco.glasl@gmail.com>
 # speedtest.tele2.net offers standardized download files with sizes/names like
@@ -49,7 +50,7 @@ ULT="upload/$(date +%N).zip"              # Upload test target file
 LOG="$(date +%Y-%m)"                      # Create a new log every month
 CHK="sha256sum"                           # Tool to add checksum to rows
 
-# Format of curl date (for curl -w)
+# Format of curl csv data (for curl -w)
 FMT="%{remote_ip},%{size_download},%{speed_download},%{size_upload},%{speed_upload},%{time_namelookup},%{time_connect},%{time_total}"
 
 # Get my public IP address via API but check output before use
@@ -120,6 +121,17 @@ function checksum {
   done
 }
 
+function symlinks {
+  # Create necessary symbolic links if they do not exist yet
+  cd ${DIR}
+  for SYM in ${LNK}; do
+    if [ ! -f ${SYM} ]; then
+      echo "${0}: create symlink ${SYM}"
+      ln -s ./${BASE} ${SYM}
+    fi
+  done
+}
+
 ###################
 ##  Main script  ##
 ###################
@@ -156,9 +168,16 @@ case ${CORE} in
     exit 0
     ;;
 
+  "blurl" )
+    LNK="./incoming ./outgoing ./combined ./checksum"
+    symlinks
+    echo "${0}: call again as: ${LNK}"
+    exit 1
+    ;;
+
   * )
     echo "Usage: [ combined | incoming | outgoing | checksum ]"
-    echo "OOKLA Speedtest wrapper, (c) 2017 by eelco.glasl@gmail.com"
+    echo "Bandwidth and Link tester wrapped around cURL, (c) 2017 by eelco.glasl@gmail.com"
     echo "  combined - write a combined download and upload log"
     echo "  incoming - write a download test log"
     echo "  outgoing - write an upload test log"
