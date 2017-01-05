@@ -176,12 +176,14 @@ case ${CORE} in
     ;;
 
   * )
-    echo "Usage: [ combined | incoming | outgoing | checksum ]"
-    echo "Bandwidth and Link tester wrapped around cURL, (c) 2017 by eelco.glasl@gmail.com"
-    echo "  combined - write a combined download and upload log"
-    echo "  incoming - write a download test log"
-    echo "  outgoing - write an upload test log"
-    echo "  checksum - create a checksum file of each closed log file."
+    echo "Usage: [ combined | incoming | outgoing | checksum | blurl.sh ]"
+    echo "BLURL 1.0.0, a Bandwidth and Link tester wrapped around cURL"
+    echo "(c) 2017 by eelco.glasl@gmail.com - call script as"
+    echo "  - blurl.sh: create symlinks in ${DIR}"
+    echo "  - combined: write a combined download and upload log"
+    echo "  - incoming: write a download test log"
+    echo "  - outgoing: write an upload test log"
+    echo "  - checksum: create a checksum file of each closed log file."
     exit 1
     ;;
 
