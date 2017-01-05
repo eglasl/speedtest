@@ -125,9 +125,9 @@ function symlinks {
   # Create necessary symbolic links if they do not exist yet
   cd ${DIR}
   for SYM in ${LNK}; do
-    if [ ! -f ${SYM} ]; then
+    if [ ! -f ./${SYM} ]; then
       echo "${0}: create symlink ${SYM}"
-      ln -s ./${BASE} ${SYM}
+      ln -s ./${BASE} ./${SYM}
     fi
   done
 }
@@ -169,7 +169,7 @@ case ${CORE} in
     ;;
 
   "blurl" )
-    LNK="./incoming ./outgoing ./combined ./checksum"
+    LNK="incoming outgoing combined checksum"
     symlinks
     echo "${0}: call again as: ${LNK}"
     exit 1
