@@ -4,7 +4,7 @@
 # Calculate downstream and upstream bandwidth
 # to measure DSL or Cable connection quality.
 #
-# (c) 2016, Eelco M. Glasl <eelco.glasl@gmail.com>
+# (c) 2016, Eelco M. Glasl <e.glasl@posteo.eu>
 # speedtest.tele2.net offers standardized download files with sizes/names like
 # 10GB, 1GB, 100MB, 10MB, 1MB, 100KB, 1KB
 # etc. ending at ".zip". See http://speedtest.tele2.net/
