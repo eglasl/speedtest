@@ -178,7 +178,7 @@ case ${CORE} in
   * )
     echo "Usage: [ combined | incoming | outgoing | checksum | blurl.sh ]"
     echo "BLURL 1.0.0, a Bandwidth and Link tester wrapped around cURL"
-    echo "(c) 2017 by eelco.glasl@gmail.com - call script as"
+    echo "(c) 2019 by e.glasl@posteo.eu - call script as"
     echo "  - blurl.sh: create symlinks in ${DIR}"
     echo "  - combined: write a combined download and upload log"
     echo "  - incoming: write a download test log"
